@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     static struct option long_options[] = {
-        {"input-matches-dir", 1, 0, 'i'},
+        {"input-matches-path", 1, 0, 'i'},
         {"output-predictions-dir", 1, 0, 'o'},
         {"taxonomy-lookup-path", 1, 0, TAXONOMY_LOOKUP_PATH_OPT},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
