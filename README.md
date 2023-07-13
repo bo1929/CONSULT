@@ -292,9 +292,9 @@ There will be `--maximum-distance`+1 many columns in addition to read ID and rea
 Under each distance column, the number of *k*-mers matched with some reference *k*-mers is given.
 An example where `--maximum-distance` is 5 is given below.
 ```
-READ_ID SEQ_TYPE    0   1   2   3   4   5
-@NZ_DF158882.1-8256718  --  0   0   0   0   0   0
-@NZ_DF158882.1-8256718  rc  1   0   0   0   0   0
+READ_ID    SEQ_TYPE    0    1    2    3    4    5
+@NZ_DF158882.1-8256718    --    0    0    0    0    0    0
+@NZ_DF158882.1-8256718    rc    1    0    0    0    0    0
 ```
 
 #### Information for match distances and corresponding taxonomic LCAs
@@ -317,7 +317,7 @@ The first row is for the read ID, and the second column is to state the form (re
 Next to them, each row reports the classified taxon ID, the total-vote value of the classified taxon, and the total vote value of the root.
 An example line from a classification report would look as below.
 ```
-@NZ_DF158884.1-433795   rc  1214065 1.000000    1.000000
+@NZ_DF158884.1-433795    rc    1214065    1.000000    1.000000
 ```
 
 CONSULT-II reports separate profiles for each rank, and each file contains rows for all the taxa estimated to be present in the sample.
@@ -327,8 +327,8 @@ The Sum of abundance values gives the number of reads with at least a single *k*
 You can simply normalize this column to have a vector whose values sum up to 1.
 An example is given below.
 ```
-TAXONOMY_ID TAXONOMY_LEVEL  FRACTION_TOTAL
-1224    phylum  28472.0000000000
+TAXONOMY_ID    TAXONOMY_LEVEL    FRACTION_TOTAL
+1224    phylum    28472.0000000000
 ```
 
 ### Description of CONSULT-II arguments and usage
