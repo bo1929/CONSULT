@@ -215,7 +215,7 @@ See an example command with needed flags below.
 
 Then, after obtaining a list of matches with reference *k*-mers for each query, run `consult_classify` to summarize matching information with a final classification:
 ```bash
- ./consult_classify -i /path/to/match_info -o /path/to/output_directory taxonomy-lookup-path /path/to/taxonomy_lookup
+ ./consult_classify -i /path/to/match-info -o /path/to/output_directory taxonomy-lookup-path /path/to/taxonomy_lookup
 # for example:
  ./consult_classify -i match-info_query000 -o . --taxonomy-lookup-path taxonomy-lookup
 ```
@@ -226,7 +226,7 @@ Filenames are input query filenames prefixed with *"classification_"*, for examp
 #### Abundance profiling
 Similar to classification, after finding *k*-mer matches of queries using `consult_search` with the `--save-matches` flag, we need to run `consult_profile` by passing the output of `consult_search` (in this case matching information) as input.
 ```bash
- ./consult_profile -i /path/to/match_info -o /path/to/output_directory taxonomy-lookup-path /path/to/taxonomy_lookup
+ ./consult_profile -i /path/to/match-info -o /path/to/output_directory taxonomy-lookup-path /path/to/taxonomy_lookup
 # for example:
  ./consult_profile -i match-info_query000 -o . --taxonomy-lookup-path taxonomy-lookup
 ```
@@ -331,7 +331,7 @@ READ_ID    SEQ_TYPE    0    1    2    3    4    5
 #### Information for match distances and corresponding taxonomic LCAs
 For classification and profiling, CONSULT-II relies on `consult_search`'s output of detailed information of *k*-mer matches, consisting of Hamming distance and taxonomic LCA for each *k*-mer match of a given query.
 In this output of `consult_search`, each query read has three rows: i) read ID, ii) *k*-mer matches of the original direction and form iii) *k*-mer matches of the reverse complement.
-You can find an example of *"match_info-\*"*.
+You can find an example of *"match-info_\*"*.
 ```
 @NZ_DF158883.1-1904898
 -- 1214065:0 1214065:0 1214065:0
