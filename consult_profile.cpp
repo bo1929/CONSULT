@@ -16,12 +16,13 @@
 #include <unordered_set>
 #include <vector>
 
-#define VERSION "v0.2.0"
+#define VERSION "v0.3.0"
 #define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
 
 #define THREAD_COUNT_OPT 'T'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define KMER_LENGTH 32
+#define ALPHA_MODE_OPT 'P'
 
 using namespace std;
 
@@ -161,7 +162,7 @@ unordered_map<uint64_t, float> get_rank_votes(kmer_match amatch,
 }
 
 void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, vector<read_info> &all_read_info,
-                     nested_map &profile_by_rank, uint64_t total_num_reads, int thread_count) {
+                     nested_map &profile_by_rank, uint64_t total_num_reads, bool alpha_mode, int thread_count) {
 #pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count) shared(taxonomy_lookup, all_read_info)
   for (int rix = 0; rix < total_num_reads; ++rix) {
     float prev_max_vote = 0.0;
@@ -209,15 +210,24 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
               }
             }
           }
-          for (auto &rank_cmap : cmap_by_rank) {
-            double total_c = 0.0;
-            for (auto &kv : rank_cmap.second)
-              total_c += kv.second;
-            uint16_t rank = rank_cmap.first;
-            if (total_c > 0) {
+          if (alpha_mode) {
+            for (auto &rank_cmap : cmap_by_rank) {
               for (auto &kv : rank_cmap.second) {
 #pragma omp critical
-                { profile_by_rank[rank][kv.first] += (kv.second / total_c); }
+                { profile_by_rank[rank_cmap.first][kv.first] += sqrt(kv.second); }
+              }
+            }
+          } else {
+            for (auto &rank_cmap : cmap_by_rank) {
+              double total_c = 0.0;
+              for (auto &kv : rank_cmap.second)
+                total_c += kv.second;
+              uint16_t rank = rank_cmap.first;
+              if (total_c > 0) {
+                for (auto &kv : rank_cmap.second) {
+#pragma omp critical
+                  { profile_by_rank[rank][kv.first] += (kv.second / total_c); }
+                }
               }
             }
           }
@@ -250,6 +260,7 @@ int main(int argc, char *argv[]) {
   char *input_path = NULL;
   string taxonomy_lookup_path;
   string output_predictions_dir = ".";
+  bool alpha_mode = false;
 
   int cf_tmp;
   opterr = 0;
@@ -259,6 +270,7 @@ int main(int argc, char *argv[]) {
         {"input-matches-path", 1, 0, 'i'},
         {"output-predictions-dir", 1, 0, 'o'},
         {"taxonomy-lookup-path", 1, 0, TAXONOMY_LOOKUP_PATH_OPT},
+        {"alpha-mode", 0, 0, ALPHA_MODE_OPT},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
         {0, 0, 0, 0},
     };
@@ -276,6 +288,8 @@ int main(int argc, char *argv[]) {
       taxonomy_lookup_path = optarg;
     else if (cf_tmp == THREAD_COUNT_OPT)
       thread_count = atoi(optarg); // Default is 1.
+    else if (cf_tmp == ALPHA_MODE_OPT)
+      alpha_mode = true;
     else {
       switch (cf_tmp) {
       case 'i':
@@ -344,7 +358,7 @@ int main(int argc, char *argv[]) {
 
     nested_map profile_by_rank;
     t1 = chrono::steady_clock::now();
-    aggregate_votes(taxonomy_lookup, all_read_info, profile_by_rank, total_num_reads, thread_count);
+    aggregate_votes(taxonomy_lookup, all_read_info, profile_by_rank, total_num_reads, alpha_mode, thread_count);
     t2 = chrono::steady_clock::now();
 
     total_profiling_time += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();

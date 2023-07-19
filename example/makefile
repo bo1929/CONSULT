@@ -104,7 +104,7 @@ profile:
 		-i "match-info_query000" \
 		-o "." \
 		--taxonomy-lookup-path "taxonomy-lookup" \
-		--thread-count 12
+		--thread-count 12 --alpha-mode
 
 map:
 	@echo -e "\n===COMPILING===\n"
