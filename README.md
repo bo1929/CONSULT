@@ -162,7 +162,7 @@ We note that, in our experiments, we used the minimization technique to decrease
 Alternatively, if a dataset is small enough, and minimization is not needed, the user can use the last command directly to obtain a list of all 32 bp *k*-mers and utilize it as input into CONSULT-II software.
 
 #### Construction of the hash table
-To construct a standard reference library, use the following command to run `consult_map`as follows:
+To construct a standard reference library, use the following command to run `consult_map` as follows:
 ```bash
 ./consult_map -i /path/to/fasta_file -o $LIBRARY_NAME
 # for example:
