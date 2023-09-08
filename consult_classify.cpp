@@ -25,9 +25,6 @@ using namespace std;
 #define KMER_LENGTH 32
 
 namespace TaxonomicInfo {
-uint16_t num_ranks = 7;
-enum rank { KINGDOM = 1, PHYLUM = 2, CLASS = 3, ORDER = 4, FAMILY = 5, GENUS = 6, SPECIES = 7 };
-
 enum Kingdoms { BACTERIA = 2, ARCHAEA = 2157 };
 
 static const Kingdoms AllKingdoms[] = {BACTERIA, ARCHAEA};
@@ -156,6 +153,7 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
     pair<uint64_t, float> identity(rootID, 0.0);
     pair<uint64_t, float> maxID(0, 0.0);
     float max_vote = 0.0;
+    uint8_t max_depth = 0;
     if (curr_read.match_vector.size() > 0) {
       unordered_map<uint64_t, vector<float>> vote_collector;
       unordered_map<uint64_t, float> final_votes;
@@ -170,7 +168,11 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
           vote_collector[vote.first].push_back(vote.second);
           all_taxIDs.insert(vote.first);
 #pragma omp critical
-          { taxIDs_by_rank[(int)taxonomy_lookup[vote.first].size()].insert(vote.first); }
+          {
+            taxIDs_by_rank[(int)taxonomy_lookup[vote.first].size()].insert(vote.first);
+            if (max_depth < taxonomy_lookup[vote.first].size())
+              max_depth = taxonomy_lookup[vote.first].size();
+          }
         }
       }
 
@@ -185,7 +187,7 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
       }
       float th_vote = 0.5 * max_vote;
 
-      for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
+      for (uint16_t lvl = max_depth; lvl >= 1; --lvl) {
         vector<uint64_t> taxIDs_vec_lvl(taxIDs_by_rank[lvl].begin(), taxIDs_by_rank[lvl].end());
         for (auto &taxID : taxIDs_vec_lvl) {
           if (final_votes[taxID] > th_vote) {
