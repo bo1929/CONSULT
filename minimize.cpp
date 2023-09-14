@@ -19,8 +19,6 @@ int main(int argc, char *argv[]) {
   auto start = chrono::steady_clock::now();
   srand(time(NULL));
 
-  // Display version number.
-
   string input_fasta_file;
   string output_fasta_file;
 
