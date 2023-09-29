@@ -121,7 +121,7 @@ As a result, the following files should be generated:
 
 ## Guide
 ### Constructing a reference library
-We made some libraries avaliable online, and many more will be in the future. See [Public libraries](#public-libraries) for a list, just click on them to download. You may want to use `wget` or a similar tool.
+We made some libraries avaliable online, and many more will be in the future. See [Public libraries](#public-libraries) for a list, just click on them to download. You may want to use `wget` or a similar tool. If you would like to use a pre-built library, skip this subsection and jump to [Taxonomic identification](#taxonomic-identification) subsection.
 #### Preprocessing
 We suggest the following workflow to obtain the *k*-mer lists from FASTA files.
 To construct the CONSULT-II library from multiple assembly references, follow the steps below.
