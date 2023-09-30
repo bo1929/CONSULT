@@ -12,7 +12,7 @@ parser.add_argument(
     required=True,
 )
 parser.add_argument(
-    "--output-dir", type=str, required=False, default="./taxonomy_lookup/"
+    "--output-dir", type=str, required=False, default="./"
 )
 parser.add_argument(
     "--from-taxonomy-database",
