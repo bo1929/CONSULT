@@ -1517,8 +1517,7 @@ void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_
                      vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix,
                      uint16_t filename_cID, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
   float p_update;
-  float s = 5.0;
-  float w = 4.0;
+  float s = 6.0;
   random_device device;
   mt19937 gen(device());
   if (encid == 0) {
@@ -1526,7 +1525,7 @@ void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_
     {
       if (!seen_0[encoding_ix]) {
         seen_0[encoding_ix] = true;
-        p_update = min(1.0, pow(1.0 / s, 2) + (w / max(w, w + (float)count_arr_0[encoding_ix] - s)));
+        p_update = 1 / log2(pow(((float)count_arr_0[encoding_ix] - 1) / s, 2) + 2);
         bernoulli_distribution btrial(p_update);
         bool update = btrial(gen);
         if (update) {
@@ -1544,7 +1543,7 @@ void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_
     {
       if (!seen_1[encoding_ix]) {
         seen_1[encoding_ix] = true;
-        p_update = min(1.0, pow(1.0 / s, 2) + (w / max(w, w + (float)count_arr_1[encoding_ix] - s)));
+        p_update = 1 / log2(pow(((float)count_arr_1[encoding_ix] - 1) / s, 2) + 2);
         bernoulli_distribution btrial(p_update);
         bool update = btrial(gen);
         if (update) {
