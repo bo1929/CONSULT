@@ -414,6 +414,7 @@ Note that if this is a directory, it should only contain *" match-info_"* files 
 
 ### Public libraries
 - [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (140 Gb - large but performant with defaults)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v020-WoL140G.tar.gz)
-- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (32 Gb - lightweight but still highly accurate)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v030-WoL32G.tar.gz)
+- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (32 Gb - lighter-weight but still highly accurate)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v030-WoL32G.tar.gz)
+- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (18 Gb - lightweight and robust)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v030-WoL18G.tar.gz)
 
 [^1]: Şapcı, A.O.B., Rachtman, E., Mirarab, S. (2023). CONSULT-II: Taxonomic Identification Using Locality Sensitive Hashing. In: Jahn, K., Vinař, T. (eds) Comparative Genomics. RECOMB-CG 2023. Lecture Notes in Computer Science, vol 13883. Springer, Cham. https://doi.org/10.1007/978-3-031-36911-7_13
