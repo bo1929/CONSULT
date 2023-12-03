@@ -105,7 +105,7 @@ As a result, the following files should be generated:
 - `G000307305-k32C_minimized.fa`: minimized *k*-mers, in FASTA format,
 
 - `G000307305_nbr_mapping`: a directory to store reference library files, such as *k*-mer encodings, taxonomic LCAs, metadata,
-
+    
 - `classified-seq_query000`: list of reads with at least one (default `c` value) *k*-mer match,
 
 - `unclassified-seq_query000`: list of reads without any *k*-mer match,
@@ -118,7 +118,7 @@ As a result, the following files should be generated:
 
 - `profile_query000-*`: an abundance profile for each rank.
 
-
+   
 ## Guide
 ### Constructing a reference library
 We made some libraries avaliable online, and many more will be in the future. See [Public libraries](#public-libraries) for a list, just click on them to download. You may want to use `wget` or a similar tool. If you would like to use a pre-built library, skip this subsection and jump to [Taxonomic identification](#taxonomic-identification) subsection.
@@ -413,7 +413,7 @@ Note that if this is a directory, it should only contain *" match-info_"* files 
 - `--thread-count`: number of threads to be used, default is 1.
 
 ### Public libraries
-- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (140 Gb - large but performant)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v020-WoL8B.tar.gz)
-- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (16 Gb - lightweight but still highly accurate)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v030-WoL1B.tar.gz)
+- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (140 Gb - large but performant with defaults)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v020-WoL140G.tar.gz)
+- [WoL: Reference Phylogeny for Microbes (bacteria and archaea) (32 Gb - lightweight but still highly accurate)](https://ter-trees.ucsd.edu/data/consult/CONSULT-II/library-v030-WoL32G.tar.gz)
 
 [^1]: Şapcı, A.O.B., Rachtman, E., Mirarab, S. (2023). CONSULT-II: Taxonomic Identification Using Locality Sensitive Hashing. In: Jahn, K., Vinař, T. (eds) Comparative Genomics. RECOMB-CG 2023. Lecture Notes in Computer Science, vol 13883. Springer, Cham. https://doi.org/10.1007/978-3-031-36911-7_13
