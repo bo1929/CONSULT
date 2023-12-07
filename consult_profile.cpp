@@ -24,6 +24,9 @@
 #define REFERENCE_LOOKUP_PATH_OPT 'R'
 #define KMER_LENGTH 32
 #define ALPHA_MODE_OPT 'P'
+#define FORCE_UNIT_OPT 'F'
+
+#define VOTE_THRESHOLD 0.03
 
 using namespace std;
 
@@ -44,7 +47,7 @@ unordered_map<int, string> mapRankName = {{1, "kingdom"}, {2, "phylum"}, {3, "cl
 
 struct kmer_match {
   uint16_t dist;
-  float vote;
+  double vote;
   uint64_t taxID;
 };
 
@@ -54,7 +57,7 @@ struct read_info {
   vector<kmer_match> match_vector;
 };
 
-string to_string_p(const float value, const int n = 8) {
+string to_string_p(const double value, const int n = 8) {
   std::ostringstream out;
   out.precision(n);
   out << fixed << value;
@@ -139,10 +142,10 @@ void read_matches(string filepath, unordered_map<uint64_t, vector<uint64_t>> &re
         kmer_match curr_match;
         curr_match.dist = stoi(dist_str);
         curr_match.taxID = stoi(taxID_str);
-        while (taxonomy_lookup.find(curr_match.taxID) == taxonomy_lookup.end() && curr_match.taxID != 0) {
+        while (taxonomy_lookup.find(curr_match.taxID) == taxonomy_lookup.end() && curr_match.taxID > 1) {
           curr_match.taxID = ref_lookup[curr_match.taxID].end()[-2];
         }
-        curr_match.vote = pow((1.0 - curr_match.dist / (float)k), k);
+        curr_match.vote = pow((1.0 - curr_match.dist / (double)k), k);
         match_vector.push_back(curr_match);
       }
 
@@ -157,27 +160,33 @@ void read_matches(string filepath, unordered_map<uint64_t, vector<uint64_t>> &re
 }
 
 void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, vector<read_info> &all_read_info,
-                     nested_map &profile_by_rank, uint64_t total_num_reads, bool alpha_mode, int thread_count) {
+                     nested_map &profile_by_rank, uint64_t total_num_reads, bool force_unit, bool alpha_mode,
+                     int thread_count) {
 #pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count) shared(taxonomy_lookup, all_read_info)
   for (int rix = 0; rix < total_num_reads; ++rix) {
-    float prev_max_vote = 0.0;
-    unordered_map<uint64_t, float> prev_final_votes;
+    double prev_max_vote = 0.0;
+    unordered_map<uint64_t, double> prev_final_votes;
     for (int cx = 0; cx < 2; ++cx) {
       int ix = rix * 2 + cx;
       read_info &curr_read = all_read_info[ix];
-      uint64_t rootID = 1;
-      pair<uint64_t, float> identity(rootID, 0.0);
-      float curr_max_vote = 0.0;
+      uint64_t root_ID = 1;
+      double root_vote = 0;
+      double curr_max_vote = 0.0;
+
       if (curr_read.match_vector.size() > 0) {
-        unordered_map<uint64_t, float> vote_collector;
+        unordered_map<uint64_t, double> vote_collector;
         unordered_set<uint64_t> all_taxIDs;
         unordered_map<uint16_t, unordered_set<uint64_t>> taxIDs_by_rank;
 
         for (auto &curr_match : curr_read.match_vector) {
-          unordered_map<uint64_t, float> match_votes;
-          for (uint64_t a_taxID : taxonomy_lookup[curr_match.taxID]) {
-            if ((a_taxID > 0) && (curr_match.taxID > 0))
-              match_votes[a_taxID] = curr_match.vote;
+          unordered_map<uint64_t, double> match_votes;
+          if (curr_match.taxID < 2) {
+            root_vote += curr_match.vote;
+          } else {
+            for (uint64_t a_taxID : taxonomy_lookup[curr_match.taxID]) {
+              if (a_taxID > 0)
+                match_votes[a_taxID] = curr_match.vote;
+            }
           }
           for (auto &vote : match_votes) {
             vote_collector[vote.first] += vote.second;
@@ -190,18 +199,24 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
         for (const auto &taxon : TaxonomicInfo::AllKingdoms) {
           curr_max_vote += vote_collector[static_cast<int>(taxon)];
         }
+
         if (ix % 2 == 1) {
+          std::unordered_map<uint16_t, double> sum_by_rank;
           nested_map cmap_by_rank;
           for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
             vector<uint64_t> taxIDs_vec_lvl(taxIDs_by_rank[lvl].begin(), taxIDs_by_rank[lvl].end());
             for (auto &taxID : taxIDs_vec_lvl) {
               if (curr_max_vote > prev_max_vote) {
                 cmap_by_rank[lvl][taxID] += vote_collector[taxID];
+                sum_by_rank[lvl] += vote_collector[taxID];
               } else {
                 cmap_by_rank[lvl][taxID] += prev_final_votes[taxID];
+                sum_by_rank[lvl] += prev_final_votes[taxID];
               }
             }
           }
+          sum_by_rank[0] = sum_by_rank[1] + root_vote;
+
           if (alpha_mode) {
             for (auto &rank_cmap : cmap_by_rank) {
               for (auto &kv : rank_cmap.second) {
@@ -211,15 +226,24 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
             }
           } else {
             for (auto &rank_cmap : cmap_by_rank) {
-              double total_c = 0.0;
-              for (auto &kv : rank_cmap.second)
-                total_c += kv.second;
-              uint16_t rank = rank_cmap.first;
-              if (total_c > 0) {
+              uint64_t n_ix;
+              if (force_unit)
+                n_ix = rank_cmap.first;
+              else
+                n_ix = 0;
+              if (sum_by_rank[n_ix] > 0) {
                 for (auto &kv : rank_cmap.second) {
+                  if (kv.second > VOTE_THRESHOLD) {
 #pragma omp critical
-                  { profile_by_rank[rank][kv.first] += (kv.second / total_c); }
+                    profile_by_rank[rank_cmap.first][kv.first] += (kv.second / sum_by_rank[n_ix]);
+                  } else {
+#pragma omp critical
+                    profile_by_rank[rank_cmap.first][0] += (kv.second / sum_by_rank[n_ix]);
+                  }
                 }
+#pragma omp critical
+                profile_by_rank[rank_cmap.first][0] +=
+                    (sum_by_rank[n_ix] - sum_by_rank[rank_cmap.first]) / sum_by_rank[n_ix];
               }
             }
           }
@@ -254,6 +278,7 @@ int main(int argc, char *argv[]) {
   string ref_lookup_path;
   string output_predictions_dir = ".";
   bool alpha_mode = false;
+  bool force_unit = false;
 
   int cf_tmp;
   opterr = 0;
@@ -265,6 +290,7 @@ int main(int argc, char *argv[]) {
         {"taxonomy-lookup-path", 1, 0, TAXONOMY_LOOKUP_PATH_OPT},
         {"ref-lookup-path", 0, 0, REFERENCE_LOOKUP_PATH_OPT},
         {"alpha-mode", 0, 0, ALPHA_MODE_OPT},
+        {"force-unit", 0, 0, FORCE_UNIT_OPT},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
         {0, 0, 0, 0},
     };
@@ -286,6 +312,8 @@ int main(int argc, char *argv[]) {
       thread_count = atoi(optarg); // Default is 1.
     else if (cf_tmp == ALPHA_MODE_OPT)
       alpha_mode = true;
+    else if (cf_tmp == FORCE_UNIT_OPT)
+      force_unit = true;
     else {
       switch (cf_tmp) {
       case 'i':
@@ -344,15 +372,18 @@ int main(int argc, char *argv[]) {
     string output_path = output_predictions_dir + "/" + "profile_" + query_name;
     cout << "Now processing: " << query_name << endl;
 
+    cout << "Reading the taxonomy lookup..." << endl;
     unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup;
     read_taxonomy_lookup(taxonomy_lookup_path, taxonomy_lookup);
     unordered_map<uint64_t, vector<uint64_t>> ref_lookup;
     read_taxonomy_lookup(ref_lookup_path, ref_lookup);
 
+    cout << "Reading k-mer matches from the disk..." << endl;
     vector<read_info> all_read_info;
     t1 = chrono::steady_clock::now();
     read_matches(input_path, ref_lookup, taxonomy_lookup, all_read_info);
     t2 = chrono::steady_clock::now();
+    cout << "Done reading k-mer matches per sequence..." << endl;
 
     total_read_time = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     total_num_reads += all_read_info.size() / 2;
@@ -360,7 +391,8 @@ int main(int argc, char *argv[]) {
 
     nested_map profile_by_rank;
     t1 = chrono::steady_clock::now();
-    aggregate_votes(taxonomy_lookup, all_read_info, profile_by_rank, total_num_reads, alpha_mode, thread_count);
+    aggregate_votes(taxonomy_lookup, all_read_info, profile_by_rank, total_num_reads, force_unit, alpha_mode,
+                    thread_count);
     t2 = chrono::steady_clock::now();
 
     total_profiling_time = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
