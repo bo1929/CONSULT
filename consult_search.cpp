@@ -49,6 +49,10 @@ using namespace std;
 #define UPDATE_ID_OPT 'U'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define FILENAME_MAP_PATH_OPT 'F'
+#define SOFT_PARAM 6.0
+
+random_device device;
+mt19937 gen(device());
 
 // Prototypes.
 vector<string> list_dir(const char *path);
@@ -1490,22 +1494,20 @@ void read_filename_map(string filename, map<string, uint64_t> &filename_to_taxID
 }
 
 uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
-  vector<uint16_t> p_curr = taxonomy_lookup[cID_0];
-  vector<uint16_t> p_new = taxonomy_lookup[cID_1];
-  int rank_diff = p_new.size() - p_curr.size();
+  int rank_diff = taxonomy_lookup[cID_1].size() - taxonomy_lookup[cID_0].size();
   uint16_t cID = 1;
-  for (int i = 0; i < p_curr.size(); ++i) {
-    if ((p_new[i + rank_diff] != 0) && (p_curr[i] != 0)) {
-      if (p_curr[i] == p_new[i + rank_diff]) {
-        cID = p_curr[i];
+  for (int i = 0; i < taxonomy_lookup[cID_0].size(); ++i) {
+    if ((taxonomy_lookup[cID_1][i + rank_diff] != 0) && (taxonomy_lookup[cID_0][i] != 0)) {
+      if (taxonomy_lookup[cID_0][i] == taxonomy_lookup[cID_1][i + rank_diff]) {
+        cID = taxonomy_lookup[cID_0][i];
         break;
       }
     } else {
-      if (p_new[i + rank_diff] != 0) {
-        cID = p_new[i + rank_diff];
+      if (taxonomy_lookup[cID_1][i + rank_diff] != 0) {
+        cID = taxonomy_lookup[cID_1][i + rank_diff];
         break;
-      } else if (p_curr[i] != 0) {
-        cID = p_curr[i];
+      } else if (taxonomy_lookup[cID_0][i] != 0) {
+        cID = taxonomy_lookup[cID_0][i];
         break;
       }
     }
@@ -1516,43 +1518,39 @@ uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<u
 void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
                      vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix,
                      uint16_t filename_cID, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
-  float p_update;
-  float s = 6.0;
-  random_device device;
-  mt19937 gen(device());
   if (encid == 0) {
+#pragma atomic read
+    if (!seen_0[encoding_ix]) {
+#pragma atomic write
+      seen_0[encoding_ix] = true;
+      bernoulli_distribution btrial(1 / log2(pow(((float)count_arr_0[encoding_ix] - 1) / SOFT_PARAM, 2) + 2));
+      if (btrial(gen)) {
+        if (cID_arr_0[encoding_ix] == 0) {
 #pragma omp critical
-    {
-      if (!seen_0[encoding_ix]) {
-        seen_0[encoding_ix] = true;
-        p_update = 1 / log2(pow(((float)count_arr_0[encoding_ix] - 1) / s, 2) + 2);
-        bernoulli_distribution btrial(p_update);
-        bool update = btrial(gen);
-        if (update) {
-          if (cID_arr_0[encoding_ix] == 0) {
-            cID_arr_0[encoding_ix] = filename_cID;
-          } else if (cID_arr_0[encoding_ix] == 1) {
-          } else {
-            cID_arr_0[encoding_ix] = getLCA(cID_arr_0[encoding_ix], filename_cID, taxonomy_lookup);
-          }
+          cID_arr_0[encoding_ix] = filename_cID;
+        } else if (cID_arr_0[encoding_ix] == 1) {
+        } else {
+          auto new_label = getLCA(cID_arr_0[encoding_ix], filename_cID, taxonomy_lookup);
+#pragma atomic write
+          cID_arr_0[encoding_ix] = new_label;
         }
       }
     }
   } else {
+#pragma atomic read
+    if (!seen_1[encoding_ix]) {
+#pragma atomic write
+      seen_1[encoding_ix] = true;
+      bernoulli_distribution btrial(1 / log2(pow(((float)count_arr_1[encoding_ix] - 1) / SOFT_PARAM, 2) + 2));
+      if (btrial(gen)) {
+        if (cID_arr_1[encoding_ix] == 0) {
 #pragma omp critical
-    {
-      if (!seen_1[encoding_ix]) {
-        seen_1[encoding_ix] = true;
-        p_update = 1 / log2(pow(((float)count_arr_1[encoding_ix] - 1) / s, 2) + 2);
-        bernoulli_distribution btrial(p_update);
-        bool update = btrial(gen);
-        if (update) {
-          if (cID_arr_1[encoding_ix] == 0) {
-            cID_arr_1[encoding_ix] = filename_cID;
-          } else if (cID_arr_1[encoding_ix] == 1) {
-          } else {
-            cID_arr_1[encoding_ix] = getLCA(cID_arr_1[encoding_ix], filename_cID, taxonomy_lookup);
-          }
+          cID_arr_1[encoding_ix] = filename_cID;
+        } else if (cID_arr_1[encoding_ix] == 1) {
+        } else {
+          auto new_label = getLCA(cID_arr_1[encoding_ix], filename_cID, taxonomy_lookup);
+#pragma atomic write
+          cID_arr_1[encoding_ix] = new_label;
         }
       }
     }
