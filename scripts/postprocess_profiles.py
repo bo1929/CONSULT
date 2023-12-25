@@ -124,19 +124,19 @@ if __name__ == "__main__":
     df_all = df_all.loc[df_all["TAXONOMY_ID"].isin(parent_taxa) | (df_all["FRACTION_TOTAL"].astype(float) > th)]
     # df_all = df_all.loc[df_all["TAXONOMY_ID"].isin(parent_taxa)]
 
-    # df_genome_info = pd.read_csv(sys.argv[4], sep="\t")
-    # df_genome_info = df_genome_info[["species_taxid", "genome_size"]]
-    # gsize = defaultdict(list)
-    # for index, row in df_genome_info.iterrows():
-    #     path = get_id_path(str(row["species_taxid"]), taxid_to_parent, taxid_to_rank)
-    #     if path is not None:
-    #         for taxid in path:
-    #             gsize[taxid].append(row["genome_size"])
-    # gsize = {key: sum(val)/len(val) for key, val in gsize.items()}
-    # gsize["0"] = df_genome_info["genome_size"].mean()
+    df_genome_info = pd.read_csv(sys.argv[4], sep="\t")
+    df_genome_info = df_genome_info[["species_taxid", "genome_size"]]
+    gsize = defaultdict(list)
+    for index, row in df_genome_info.iterrows():
+        path = get_id_path(str(row["species_taxid"]), taxid_to_parent, taxid_to_rank)
+        if path is not None:
+            for taxid in path:
+                gsize[taxid].append(row["genome_size"])
+    gsize = {key: sum(val)/len(val) for key, val in gsize.items()}
+    gsize["0"] = df_genome_info["genome_size"].mean()
 
-    # df_all["AVG_GENOME_SIZE"] = df_all["TAXONOMY_ID"].apply(lambda x: gsize.get(x,  gsize["0"]))
-    # df_all["FRACTION_TOTAL"] = df_all["FRACTION_TOTAL"] / df_all["AVG_GENOME_SIZE"]
+    df_all["AVG_GENOME_SIZE"] = df_all["TAXONOMY_ID"].apply(lambda x: gsize.get(x,  gsize["0"]))
+    df_all["FRACTION_TOTAL"] = df_all["FRACTION_TOTAL"] / df_all["AVG_GENOME_SIZE"]
     df_all["FRACTION_TOTAL"] = df_all["FRACTION_TOTAL"] / df_all["FRACTION_TOTAL"].sum()
 
     taxid_to_score = dict(zip(df_all["TAXONOMY_ID"], df_all["FRACTION_TOTAL"]))
