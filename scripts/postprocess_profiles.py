@@ -8,6 +8,7 @@ import numpy as np
 
 RANKS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain']
 DICT_RANK_TO_INDEX = dict(zip(RANKS, list(range(len(RANKS)))))
+DICT_RANK_TO_INDEX["kingdom"] = 0
 RANKS_LOW2HIGH = list(reversed(RANKS))
 
 
@@ -125,30 +126,29 @@ if __name__ == "__main__":
     # df_all = df_all.loc[df_all["TAXONOMY_ID"].isin(parent_taxa)]
 
     df_genome_info = pd.read_csv(sys.argv[4], sep="\t")
-    df_genome_info = df_genome_info[["species_taxid", "genome_size"]]
+    df_genome_info = df_genome_info[["species_taxid", "total_length"]]
     gsize = defaultdict(list)
     for index, row in df_genome_info.iterrows():
         path = get_id_path(str(row["species_taxid"]), taxid_to_parent, taxid_to_rank)
         if path is not None:
             for taxid in path:
-                gsize[taxid].append(row["genome_size"])
+                gsize[taxid].append(row["total_length"])
     gsize = {key: sum(val)/len(val) for key, val in gsize.items()}
-    gsize["0"] = df_genome_info["genome_size"].mean()
+    gsize["0"] = sum(gsize.values()) / len(gsize.keys())
 
     df_all["AVG_GENOME_SIZE"] = df_all["TAXONOMY_ID"].apply(lambda x: gsize.get(x,  gsize["0"]))
     df_all["FRACTION_TOTAL"] = df_all["FRACTION_TOTAL"] / df_all["AVG_GENOME_SIZE"]
-    df_all["FRACTION_TOTAL"] = df_all["FRACTION_TOTAL"] / df_all["FRACTION_TOTAL"].sum()
-
-    taxid_to_score = dict(zip(df_all["TAXONOMY_ID"], df_all["FRACTION_TOTAL"]))
 
     rank_to_taxid_to_score = defaultdict(dict)
     rank_to_taxid_to_id_path = defaultdict(dict)
-    taxid_to_score.pop("0", None)
 
-    for taxid in taxid_to_score.keys():
-        rank_index = DICT_RANK_TO_INDEX[taxid_to_rank[taxid]]
-        rank_to_taxid_to_score[rank_index][taxid] = taxid_to_score[taxid]
-        rank_to_taxid_to_id_path[rank_index][taxid] = get_id_path(taxid, taxid_to_parent, taxid_to_rank)
+    for ix, row in df_all.iterrows():
+        taxid = row["TAXONOMY_ID"]
+        curr_rank = row["TAXONOMY_LEVEL"]
+        rank_index = DICT_RANK_TO_INDEX[curr_rank]
+        rank_to_taxid_to_score[rank_index][taxid] = row["FRACTION_TOTAL"]
+        if taxid != "0":
+            rank_to_taxid_to_id_path[rank_index][taxid] = get_id_path(taxid, taxid_to_parent, taxid_to_rank)
 
 
     sample_id = sys.argv[5]
@@ -159,8 +159,9 @@ if __name__ == "__main__":
             for taxid in rank_to_taxid_to_score[rank_index]:
                 if rank_to_taxid_to_score[rank_index][taxid] == .0:
                     continue
-                id_path = rank_to_taxid_to_id_path[rank_index][taxid]
-                name_path = []
-                for id in id_path:
-                    name_path.append(taxid_to_name[id])
-                f.write("{}\t{}\t{}\t{}\t{}\n".format(taxid, taxid_to_rank[taxid], "|".join(id_path), "|".join(name_path), rank_to_taxid_to_score[rank_index][taxid] * 100))
+                if taxid != "0":
+                    id_path = rank_to_taxid_to_id_path[rank_index][taxid]
+                    name_path = []
+                    for id in id_path:
+                        name_path.append(taxid_to_name[id])
+                    f.write("{}\t{}\t{}\t{}\t{}\n".format(taxid, taxid_to_rank[taxid], "|".join(id_path), "|".join(name_path), rank_to_taxid_to_score[rank_index][taxid] * 100 / sum(rank_to_taxid_to_score[rank_index].values())))
