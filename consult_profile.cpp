@@ -16,7 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-#define VERSION "v0.3.0"
+#define VERSION "v0.4.0"
 #define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
 
 #define THREAD_COUNT_OPT 'T'

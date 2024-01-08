@@ -32,7 +32,7 @@
 
 using namespace std;
 
-#define VERSION "v0.3.0"
+#define VERSION "v0.4.0"
 #define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
 
 #define KMER_LENGTH 32
