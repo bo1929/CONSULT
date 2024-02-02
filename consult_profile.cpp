@@ -16,7 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-#define VERSION "v0.4.0"
+#define VERSION "v0.4.1"
 #define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
 
 #define THREAD_COUNT_OPT 'T'
@@ -27,6 +27,7 @@
 #define FORCE_UNIT_OPT 'F'
 
 #define VOTE_THRESHOLD 0.03
+#define DIST_THRESHOLD 5
 
 using namespace std;
 
@@ -142,11 +143,16 @@ void read_matches(string filepath, unordered_map<uint64_t, vector<uint64_t>> &re
         kmer_match curr_match;
         curr_match.dist = stoi(dist_str);
         curr_match.taxID = stoi(taxID_str);
-        while (taxonomy_lookup.find(curr_match.taxID) == taxonomy_lookup.end() && curr_match.taxID > 1) {
-          curr_match.taxID = ref_lookup[curr_match.taxID].end()[-2];
+        if ((curr_match.dist <= DIST_THRESHOLD)) {
+          while (taxonomy_lookup.find(curr_match.taxID) == taxonomy_lookup.end() && curr_match.taxID > 1) {
+            if (ref_lookup[curr_match.taxID].size() > 2)
+              curr_match.taxID = ref_lookup[curr_match.taxID].end()[-2];
+            else
+              curr_match.taxID = 1;
+          }
+          curr_match.vote = pow((1.0 - curr_match.dist / (double)k), k);
+          match_vector.push_back(curr_match);
         }
-        curr_match.vote = pow((1.0 - curr_match.dist / (double)k), k);
-        match_vector.push_back(curr_match);
       }
 
       read_info curr_read;
@@ -220,8 +226,10 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
           if (alpha_mode) {
             for (auto &rank_cmap : cmap_by_rank) {
               for (auto &kv : rank_cmap.second) {
+                if (kv.second > VOTE_THRESHOLD) {
 #pragma omp critical
-                { profile_by_rank[rank_cmap.first][kv.first] += sqrt(kv.second); }
+                  { profile_by_rank[rank_cmap.first][kv.first] += sqrt(kv.second); }
+                }
               }
             }
           } else {
@@ -288,7 +296,7 @@ int main(int argc, char *argv[]) {
         {"input-matches-path", 1, 0, 'i'},
         {"output-predictions-dir", 1, 0, 'o'},
         {"taxonomy-lookup-path", 1, 0, TAXONOMY_LOOKUP_PATH_OPT},
-        {"ref-lookup-path", 0, 0, REFERENCE_LOOKUP_PATH_OPT},
+        {"ref-lookup-path", 1, 0, REFERENCE_LOOKUP_PATH_OPT},
         {"alpha-mode", 0, 0, ALPHA_MODE_OPT},
         {"force-unit", 0, 0, FORCE_UNIT_OPT},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
