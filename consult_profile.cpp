@@ -144,14 +144,16 @@ void read_matches(string filepath, unordered_map<uint64_t, vector<uint64_t>> &re
         curr_match.dist = stoi(dist_str);
         curr_match.taxID = stoi(taxID_str);
         if ((curr_match.dist <= DIST_THRESHOLD)) {
-          while (taxonomy_lookup.find(curr_match.taxID) == taxonomy_lookup.end() && curr_match.taxID > 1) {
-            if (ref_lookup[curr_match.taxID].size() > 2)
+          while ((taxonomy_lookup.find(curr_match.taxID) == taxonomy_lookup.end()) && curr_match.taxID > 1) {
+            if (ref_lookup[curr_match.taxID].size() >= 2)
               curr_match.taxID = ref_lookup[curr_match.taxID].end()[-2];
             else
               curr_match.taxID = 1;
           }
-          curr_match.vote = pow((1.0 - curr_match.dist / (double)k), k);
-          match_vector.push_back(curr_match);
+          if (curr_match.taxID != 1) {
+            curr_match.vote = pow((1.0 - curr_match.dist / (double)k), k);
+            match_vector.push_back(curr_match);
+          }
         }
       }
 
@@ -241,17 +243,19 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, 
                 n_ix = 0;
               if (sum_by_rank[n_ix] > 0) {
                 for (auto &kv : rank_cmap.second) {
-                  if (kv.second > VOTE_THRESHOLD) {
+                  if (kv.second > VOTE_THRESHOLD && (kv.second > (sum_by_rank[0] * 0.5))) {
 #pragma omp critical
-                    profile_by_rank[rank_cmap.first][kv.first] += (kv.second / sum_by_rank[n_ix]);
+                    profile_by_rank[rank_cmap.first][kv.first] += 1; //(kv.second / sum_by_rank[n_ix]);
                   } else {
 #pragma omp critical
-                    profile_by_rank[rank_cmap.first][0] += (kv.second / sum_by_rank[n_ix]);
+                    profile_by_rank[rank_cmap.first][0] += 1; //(kv.second / sum_by_rank[n_ix]);
                   }
                 }
+              } else {
+                for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
 #pragma omp critical
-                profile_by_rank[rank_cmap.first][0] +=
-                    (sum_by_rank[n_ix] - sum_by_rank[rank_cmap.first]) / sum_by_rank[n_ix];
+                  profile_by_rank[lvl][0] += 1; //(kv.second / sum_by_rank[n_ix]);
+                }
               }
             }
           }
