@@ -1,5 +1,17 @@
-- [CONSULT-II](#consult-ii)
-  * [Overview](#overview)
+# Announcement
+We recommend using [KRANK](https://github.com/bo1929/KRANK).
+KRANK uses the same exact algorithm for sequence classification and abundance profiling.
+It is faster, much more user-friendly, and is simply better software.
+It wraps many redundancies of CONSULT-II's procedures into single commands.
+KRANK and CONSULT-II only differ in terms of *k*-mers selected to keep in the library.
+KRANK develops some heuristics to select a **better** *k*-mer subset and hence requires less memory to maintain the same performance as CONSULT-II.
+It also is very easy to emulate CONSULT-II using the `--fast-mode` option of KRANK, which is much faster!
+You may want to cite both if you use KRANK as it borrows its classification algorithm from CONSULT-II.
+
+# CONSULT-II
+*Ali Osman Berk Şapcı, Eleonora Rachtman, Siavash Mirarab, CONSULT-II: Accurate taxonomic identification and profiling using locality-sensitive hashing, Bioinformatics, 2024;, btae150, https://doi.org/10.1093/bioinformatics/btae150*
+
+- [CONSULT-II](#consult-ii)  * [Overview](#overview)
   * [Getting started](#getting-started)
     + [System requirements](#system-requirements)
       - [Memory and disk space](#memory-and-disk-space)
@@ -20,7 +32,7 @@
       - [FASTA file for library construction](#fasta-file-for-library-construction)
       - [Query files for taxonomic identification](#query-files-for-taxonomic-identification)
       - [Taxonomy lookup and filename map](#taxonomy-lookup-and-filename-map)
-      - [Report for number of matched *k*-mers and their Hamming distances](#report-for-number-of-matched--k--mers-and-their-hamming-distances)
+      - [Report for number of matched *k*-mers and their Hamming distances](#report-for-number-of-matches-and-their-hamming-distances)
       - [Information for match distances and corresponding taxonomic LCAs](#information-for-match-distances-and-corresponding-taxonomic-lcas)
       - [Result files for classification and profiling](#result-files-for-classification-and-profiling)
     + [Description of CONSULT-II arguments and usage](#description-of-consult-ii-arguments-and-usage)
@@ -29,7 +41,6 @@
       - [`consult_search`](#-consult-search-)
       - [`consult_profile` & `consult_classify`](#-consult-profile-----consult-classify-)
     + [Public libraries](#public-libraries)
-# CONSULT-II
 ## Overview
 CONSULT-II is a tool for taxonomic identification and successor of CONSULT.
 CONSULT-II extends CONSULT by enabling taxonomic classification and abundance profiling, in addition to contamination removal.
@@ -41,7 +52,7 @@ Furthermore, for a given query read, CONSULT-II can report *k*-mer matches, Hamm
 It supports the inclusion of approximately billions *k*-mers in its reference library, accommodating datasets with tens of thousands of microbial species.
 CONSULT-II is efficiently parallelized and can handle very large datasets.
 
-Despite being memory hungry, our careful benchmarking shows that CONSULT-II outperforms popular *k*-mer-based tools such as Kraken-2 and CLARK in accuracy.
+Despite being memory-hungry, our careful benchmarking shows that CONSULT-II outperforms popular *k*-mer-based tools such as Kraken-2 and CLARK in accuracy.
 We provide reference libraries, so you can download them and jump into taxonomic identification of your queries.
 
 ## Getting started
@@ -121,7 +132,7 @@ As a result, the following files should be generated:
    
 ## Guide
 ### Constructing a reference library
-We made some libraries avaliable online, and many more will be in the future. See [Public libraries](#public-libraries) for a list, just click on them to download. You may want to use `wget` or a similar tool. If you would like to use a pre-built library, skip this subsection and jump to [Taxonomic identification](#taxonomic-identification) subsection.
+We made some libraries available online, and many more will be in the future. See [Public libraries](#public-libraries) for a list, just click on them to download. You may want to use `wget` or a similar tool. If you would like to use a pre-built library, skip this subsection and jump to [Taxonomic identification](#taxonomic-identification) subsection.
 #### Preprocessing
 We suggest the following workflow to obtain the *k*-mer lists from FASTA files.
 To construct the CONSULT-II library from multiple assembly references, follow the steps below.
@@ -317,7 +328,7 @@ Two example rows would look as below.
 Fortunately, we provide a script to create this lookup table from a taxonomy (`.dmp` file).
 Simply run `scripts/construct_taxonomy_lookup.py --help` to start using the script.
 
-#### Report for number of matched *k*-mers and their Hamming distances
+#### Report for number of matches and their Hamming distances
 CONSULT-II can report the number of *k*-mer matches for given query reads in a tab-separated file.
 There will be `--maximum-distance`+1 many columns in addition to read ID and read form (original or reverse complement) columns.
 Under each distance column, the number of *k*-mers matched with some reference *k*-mers is given.
