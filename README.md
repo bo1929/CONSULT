@@ -1,6 +1,6 @@
 # Announcement
 We recommend using [KRANK](https://github.com/bo1929/KRANK).
-KRANK uses the same exact algorithm for sequence classification and abundance profiling.
+KRANK uses the **same algorithm** as CONSULT-II for sequence classification and abundance profiling.
 It is faster, much more user-friendly, and is simply better software.
 It wraps many redundancies of CONSULT-II's procedures into single commands.
 KRANK and CONSULT-II only differ in terms of *k*-mers selected to keep in the library.
