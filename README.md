@@ -11,7 +11,8 @@ You may want to cite both if you use KRANK as it borrows its classification algo
 # CONSULT-II
 *Ali Osman Berk Şapcı, Eleonora Rachtman, Siavash Mirarab, CONSULT-II: Accurate taxonomic identification and profiling using locality-sensitive hashing, Bioinformatics, 2024;, btae150, https://doi.org/10.1093/bioinformatics/btae150*
 
-- [CONSULT-II](#consult-ii)  * [Overview](#overview)
+- [CONSULT-II](#consult-ii)
+  * [Overview](#overview)
   * [Getting started](#getting-started)
     + [System requirements](#system-requirements)
       - [Memory and disk space](#memory-and-disk-space)
